@@ -1,14 +1,6 @@
 import conf from "../../conf/conf";
 import { Client, Databases } from "appwrite";
 
-export interface getPostProps {
-  slug: string;
-}
-
-export interface FileIdProps {
-  fileId: string;
-}
-
 export class Service {
   client: Client = new Client();
   databases: Databases;
