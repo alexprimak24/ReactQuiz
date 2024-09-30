@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/Progress.tsx","./src/components/Question.tsx","./src/conf/conf.ts","./src/services/appwrite/auth.ts","./src/services/appwrite/config.ts"],"version":"5.6.2"}
