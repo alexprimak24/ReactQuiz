@@ -58,6 +58,14 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+button:disabled {
+  background-color: #b0b0b0; /* Lighter background color for disabled state */
+  color: #6c757d; /* Muted text color for disabled state */
+  cursor: not-allowed; /* Change cursor to indicate the button is disabled */
+  border-color: #dcdcdc; /* Adjust border color for disabled state */
+  opacity: 0.65; /* Optionally, reduce opacity for a more subdued look */
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

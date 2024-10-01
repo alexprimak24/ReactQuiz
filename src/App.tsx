@@ -4,18 +4,20 @@ import Progress from "./components/Progress";
 import appwriteService from "./services/appwrite/config";
 import { Models } from "appwrite";
 import Question from "./components/Question";
+import { useTimer } from "react-timer-hook";
 
-enum moveVectorEnum {
+enum MoveVectorEnum {
   Next,
   Prev,
 }
 
-enum quizState {
+enum QuizState {
   Playing,
   Finished,
 }
 
 function App() {
+  const TIMER = 300; //constant for current timer 5 mins
   const [questions, setQuestions] = useState<
     Models.DocumentList<Models.Document> | undefined
   >();
@@ -28,40 +30,53 @@ function App() {
   const [userAnswer, setUserAnswer] = useState<string | undefined>();
   const [userPoints, setUserPoints] = useState(0);
 
-  const [gameState, setGameState] = useState<quizState>(quizState.Playing);
+  const [gameState, setGameState] = useState<QuizState>(QuizState.Playing);
+  //initialized timer on page load
+  const expiryTimestamp = new Date();
+  expiryTimestamp.setSeconds(expiryTimestamp.getSeconds() + TIMER);
+  const { seconds, minutes, restart } = useTimer({
+    expiryTimestamp,
+    onExpire: () => handleSubmit(),
+  });
 
   useEffect(() => {
-    const fetchPosts = async () => {
+    //fetching questions from Appwrite
+    const fetchQuestions = async () => {
+      //get questions from appwrite
+      //response returns: document - questions itself and total - total number of questions
       const response = await appwriteService.getQuestions();
+      //if questions exist
       if (response && response.documents) {
-        console.log(response);
+        //set the questions to setQuestions
         setQuestions(response);
+        //get the answer for the first question and set it once the page loads
         setAnswer(response.documents[0].answer);
+        //set the total amount of questions
         setTotalAmountOfQuestions(response.total);
-        // Calculate total points
+        // Calculate total points and save it to totalPoints
         let totalPoints = 0;
+        //forEach is used as we are not manipulating data, just reading it
         response.documents.forEach((document) => {
           totalPoints += document.points_gives;
         });
+        //once we finished with forEach => we totalPoints to setTotalAmountOfPoints
         setTotalAmountOfPoints(totalPoints);
       } else {
         console.log("No Questions found");
       }
     };
-    fetchPosts();
+    fetchQuestions();
   }, []);
 
-  console.log(currentQuestion);
-
   //How I initially wrote it
-  // function questionNavigation(moveVector: moveVectorEnum) {
+  // function questionNavigation(moveVector: MoveVectorEnum) {
   //   if (currentQuestion + 1 < totalAmountOfQuestions) {
   //     if (userAnswer === answer) {
   //       setUserPoints(
   //         (prev) => prev + questions?.documents[currentQuestion].points_gives
   //       );
   //     }
-  //     if (moveVector === moveVectorEnum.Next) {
+  //     if (moveVector === MoveVectorEnum.Next) {
   //       setCurrentQuestion(currentQuestion + 1);
   //       setAnswer(questions?.documents[currentQuestion + 1].answer);
   //     } else {
@@ -75,39 +90,52 @@ function App() {
   // }
 
   //How I optimized it
-  function questionNavigation(moveVector: moveVectorEnum) {
+  function questionNavigation(moveVector: MoveVectorEnum) {
+    //get nextIndex based on which button has been set -> next sets MoveVectorEnum.Next
     const nextIndex =
-      moveVector === moveVectorEnum.Next
+      moveVector === MoveVectorEnum.Next
         ? currentQuestion + 1
         : currentQuestion - 1;
+    //in case next question is in range of existing question
     if (nextIndex >= 0 && nextIndex < totalAmountOfQuestions) {
+      //in case user answers right
       if (userAnswer === answer) {
+        //give him points for that question
         setUserPoints(
           (prev) => prev + questions?.documents[currentQuestion].points_gives
         );
       }
+      //set next question
       setCurrentQuestion(nextIndex);
+      //set answer for next question
       setAnswer(questions?.documents[nextIndex].answer);
+      //set user answer to undefined - so it hasn't chosen anything atm
       setUserAnswer(undefined);
     } else {
-      setGameState(quizState.Finished);
+      //in any other case - finish the game
+      setGameState(QuizState.Finished);
     }
   }
 
   function handleSubmit() {
-    setGameState(quizState.Finished);
+    setGameState(QuizState.Finished);
   }
 
   function handleRestart() {
-    setGameState(quizState.Playing);
+    //setGameState again to Playing
+    setGameState(QuizState.Playing);
+    //setCurrentQuestion to the first question
     setCurrentQuestion(0);
+    //get currentTime
+    const newExpiryTimestamp = new Date();
+    newExpiryTimestamp.setSeconds(newExpiryTimestamp.getSeconds() + TIMER);
+    //restart the timer and add a new timer
+    restart(newExpiryTimestamp);
   }
 
-  console.log("Users Answer::", userAnswer);
-  console.log("Right Answer::", answer);
   return (
     <div className="w-[800px]">
-      {gameState === quizState.Playing ? (
+      {gameState === QuizState.Playing ? (
         <>
           <Progress
             currentQuestion={currentQuestion + 1}
@@ -121,15 +149,18 @@ function App() {
             setUserAnswer={setUserAnswer}
           />
           <div className="mt-5 flex justify-between items-center">
-            <p className="outline outline-[#44CC80] rounded-sm text-center px-5 py-2">
-              6:37
-            </p>
+            <div className="outline outline-[#44CC80] rounded-sm text-center px-5 py-2">
+              Time left: {minutes} : {seconds}
+            </div>
             <div className="flex gap-2">
-              <button onClick={() => questionNavigation(moveVectorEnum.Prev)}>
+              <button
+                onClick={() => questionNavigation(MoveVectorEnum.Prev)}
+                disabled={currentQuestion === 0}
+              >
                 Prev
               </button>
               {currentQuestion + 1 < totalAmountOfQuestions ? (
-                <button onClick={() => questionNavigation(moveVectorEnum.Next)}>
+                <button onClick={() => questionNavigation(MoveVectorEnum.Next)}>
                   Next
                 </button>
               ) : (
