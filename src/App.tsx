@@ -6,30 +6,38 @@ import { Models } from "appwrite";
 import Question from "./components/Question";
 import { useTimer } from "react-timer-hook";
 
+//Enum for Navigation
 enum MoveVectorEnum {
   Next,
   Prev,
 }
 
+//Enum to set the game State
 enum QuizState {
   Playing,
   Finished,
 }
 
 function App() {
+  //CONSTANTS
   const TIMER = 300; //constant for current timer 5 mins
+
+  //Questions document & current question
   const [questions, setQuestions] = useState<
     Models.DocumentList<Models.Document> | undefined
   >();
   const [currentQuestion, setCurrentQuestion] = useState(0);
 
+  //Total values
   const [totalAmountOfQuestions, setTotalAmountOfQuestions] = useState(0);
   const [totalAmountOfPoints, setTotalAmountOfPoints] = useState(0);
 
+  //Answer&Points
   const [answer, setAnswer] = useState<string | undefined>();
   const [userAnswer, setUserAnswer] = useState<string | undefined>();
   const [userPoints, setUserPoints] = useState(0);
 
+  //GameState and Timer
   const [gameState, setGameState] = useState<QuizState>(QuizState.Playing);
   //initialized timer on page load
   const expiryTimestamp = new Date();
